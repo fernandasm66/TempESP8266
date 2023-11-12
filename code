@@ -1,0 +1,102 @@
+#include <LiquidCrystal_I2C.h>
+#include <PubSubClient.h>
+#include <Wire.h>
+#include <ESP8266WiFi.h>
+
+const char *ssid = "Fluck Maria";   
+const char *password = "84709745"; 
+
+int t=0;
+int sensor=A0;
+float temp;
+LiquidCrystal_I2C lcd(0x27,2,16);
+
+//MQTT Broker
+const char *mqtt_broker="test.mosquitto.org";
+const char *topic="Fernanda/MQTT";
+const char *mqtt_username="";
+const char *mqtt_password="";
+const int mqtt_port=1883;
+
+bool mqttStatus = 0;
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+bool connectMQTT();
+
+void setup () {  
+  Serial.begin(9600);
+  pinMode(sensor,INPUT);
+  lcd.init();
+  lcd.backlight();
+  Serial.print("Conectado a ");
+  Serial.println(ssid);
+  WiFi.begin(ssid,password);
+  while (WiFi. status()!= WL_CONNECTED){  
+    delay(2000);
+    Serial.print(".");
+  }
+  Serial.println("") ;
+  Serial.println("WiFi conectado");
+  Serial.println (WiFi.localIP ());
+
+  mqttStatus = connectMQTT();
+
+}
+void loop () { 
+  
+  client.loop();
+
+  t=t+60;
+  temp=((float(analogRead(sensor))/6224)*3300)/10;
+  Serial.println("_______");
+  Serial.println("Logger de temperatura");
+  Serial.print("Tempo em segundos = ");
+  Serial.println(t);
+  Serial.print("Temperatura em Celcius = ");
+  Serial.println(temp);
+  lcd.setCursor(0,0);
+  lcd.print("Temp em C= ");
+  lcd.println(temp);
+  delay(30000);
+  
+}
+
+bool connectMQTT(){
+  byte tentativa = 0;
+  client.setServer(mqtt_broker, mqtt_port);
+
+do {
+  String client_id = "Fer";
+  client_id += String (WiFi.macAddress());
+
+  if (client.connect (client_id.c_str(), mqtt_username, mqtt_password)){
+    Serial.println("Êxito");
+  }
+  else {
+    Serial.print ("Falha: ");
+    Serial.print(client.state());
+    Serial.println();
+    Serial.print("Tentativa:");
+    Serial.println(tentativa);
+    delay(2000);
+  }
+  tentativa++;
+} while (!client.connected()&&tentativa<5);
+
+  if (tentativa<5){
+  client.publish(topic, "Conectado ao MQTT Broker");
+  
+  return 1;
+    while(!client.connected()){
+      client.publish(topic, "Conectado ao MQTT Broker");
+      client.subscribe(topic);
+    }
+
+  } else {
+  Serial.println("Não conectado");
+  return 0;
+  }
+}
+
