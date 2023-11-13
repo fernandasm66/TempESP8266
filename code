@@ -49,7 +49,7 @@ void loop () {
   client.loop();
 
   t=t+60;
-  temp=((float(analogRead(sensor))/6224)*3300)/10;
+  temp=((float(analogRead(sensor))/1024)*3300)/10;
   Serial.println("_______");
   Serial.println("Logger de temperatura");
   Serial.print("Tempo em segundos = ");
@@ -59,7 +59,7 @@ void loop () {
   lcd.setCursor(0,0);
   lcd.print("Temp em C= ");
   lcd.println(temp);
-  delay(30000);
+  delay(60000);
   
 }
 
